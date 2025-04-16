@@ -3,9 +3,14 @@
   "version": "1.0.0",
   "description": "all the codes and the file structure are written with the industrial standards using JS.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "dev":"nodemon src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Aviansh Boruah",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
 }
