@@ -11,7 +11,7 @@ const registerUser = asyncHandler(async (req, res) => {
   
   const { fullName, email, userName, password } = req.body || {};
   
-  console.log("email", email);
+//   console.log("email", email);
   if (
     [fullName, email, userName, password].some((field) => field?.trim() === "")
   ) {
@@ -28,7 +28,13 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+// const coverImageLocalPath = req.files?.coverImage[0]?.path;
+// classic js code to solve the TypeError: Cannot read properties of undefined
+
+let coverImageLocalPath;
+if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length >0) {
+    coverImageLocalPath=req.files.coverImage[0].path
+};
 
   if (!avatarLocalPath) {
     throw new apiErrors(400, "avatar is required");
