@@ -69,4 +69,32 @@ if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.len
     .json(new apiResponse(200, createdUser, "user registered"));
 });
 
+
+const loginUser= asyncHandler( async(req, res)=>{
+  console.log("request.body",req.body)
+  const {email, userName, password}=req.body;
+
+  if (!userName || !email) {
+    throw new apiErrors(400, "username or email is required")
+  };
+  
+  // find with userName or email
+  const user =await User.findOne({
+    $or:[{userName},{email}]
+  });
+  // now need to check
+  if (!user) {
+    throw new apiErrors(404,"There is no user with this username or email")
+  }
+  
+  // we had created a method for this
+ const isPasswordValid= await user.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new apiErrors(401,"password incorrect")
+  }
+
+
+})
+
 export { registerUser };
