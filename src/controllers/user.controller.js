@@ -4,6 +4,21 @@ import { User } from "../models/user.models.js";
 import { UploadToCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 
+const generateAccessAndRefressToken= async(userId)=>{
+  try {
+    const user= await User.findById(userId);
+    const accessToken= user.generateAccessToken();
+    const refressToken= user.generateRefreshToken()
+
+    user.refressToken=refressToken;
+    await user.save({ validateBeforeSave: false });
+
+
+  } catch (error) {
+    throw new apiErrors(500, "something went rong in creating the access and refress token")
+  }
+}
+
 const registerUser = asyncHandler(async (req, res) => {
   // time issue in this to fix i put a debug
   // Add debugging to see what's the result
@@ -93,8 +108,24 @@ const loginUser= asyncHandler( async(req, res)=>{
   if (!isPasswordValid) {
     throw new apiErrors(401,"password incorrect")
   }
+  
+  const {accessToken, refressToken}= await generateAccessAndRefressToken(user._id);
 
+  const loggedinUser= await User.findById(user._id).select("-password -refressToken");
+
+  const option={
+    httpOnly: true,
+    secure: true
+  }
+
+  return res
+  .status(200)
+  .cookie("accessToken",accessToken,option)
+  .cookie("refressToken",refressToken,option)
+  .json(new apiResponse(200,{
+    user: loggedinUser, accessToken, refressToken
+  },"user is loggedin"))
 
 })
 
-export { registerUser };
+export { registerUser, loginUser };
