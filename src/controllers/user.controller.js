@@ -20,11 +20,8 @@ const generateAccessAndRefressToken= async(userId)=>{
 }
 
 const registerUser = asyncHandler(async (req, res) => {
-  // time issue in this to fix i put a debug
-  // Add debugging to see what's the result
-  console.log("Request body:", req.body);
   
-  const { fullName, email, userName, password } = req.body || {};
+  const { fullName, email, userName, password } = req.body;
   
 //   console.log("email", email);
   if (
@@ -43,8 +40,11 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
+
+  console.log("is avatar localpath is there",avatarLocalPath);
 // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 // classic js code to solve the TypeError: Cannot read properties of undefined
+ 
 
 let coverImageLocalPath;
 if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length >0) {
@@ -56,10 +56,13 @@ if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.len
   }
 
   const avatar = await UploadToCloudinary(avatarLocalPath);
+  console.log("after avatar localpath got check",avatar)
+
+  
   const coverImage = await UploadToCloudinary(coverImageLocalPath);
 
   if (!avatar) {
-    throw new apiErrors(400, "avatar is required");
+    throw new apiErrors(400, "avatar_1 is required");
   }
 
   const user = await User.create({
@@ -84,14 +87,14 @@ if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.len
     .json(new apiResponse(200, createdUser, "user registered"));
 });
 
-
+//login controller
 const loginUser= asyncHandler( async(req, res)=>{
-  console.log("request.body",req.body)
-  const {email, userName, password}=req.body;
-
-  if (!userName || !email) {
+  console.log(req.body);
+  const {email, userName, password}= await req.body;
+   
+  if (!(userName || email)) {
     throw new apiErrors(400, "username or email is required")
-  };
+  }; 
   
   // find with userName or email
   const user =await User.findOne({
