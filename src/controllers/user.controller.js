@@ -3,7 +3,9 @@ import { apiErrors } from "../utils/apiErrors.js";
 import { User } from "../models/user.models.js";
 import { UploadToCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
+import jwt from "jsonwebtoken"
 
+// GENERATE ACCESS AND REFRESH TOKEN
 const generateAccessAndRefressToken= async(userId)=>{
   try {
     const user= await User.findById(userId);
@@ -19,6 +21,7 @@ const generateAccessAndRefressToken= async(userId)=>{
   }
 }
 
+// REGISTER USER
 const registerUser = asyncHandler(async (req, res) => {
   
   const { fullName, email, userName, password } = req.body;
@@ -152,6 +155,43 @@ const logOut= asyncHandler(async(req, res)=>{
   .clearcookie("accessToken", option)
   .clearcookie("refressToken", option)
   .json({message:"user logged out successfully"})
+});
+
+
+const refreshAccessToken= asyncHandler(async (req, res) => {
+  
+  const incommingRefreshToken=req.cookie.refreshToken || req.body.refreshToken 
+
+  if(!incommingRefreshToken){
+     throw new apiErrors(401,"unauthorized request")
+  }
+  
+  try {
+    const decodedToken= jwt.verify(incommingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+  
+    const user = await User.findById(decodedToken?._id)
+  
+    if(!user){
+      throw new apiErrors(401,"invalid refresh token")
+   }
+  
+   if (incommingRefreshToken !== user?.refreshToken) {
+    throw new apiErrors(401,"refresh token is expired or used")
+   }
+  
+   const option={
+    httpOnly: true,
+    secure: true
+  }
+  
+  const {accessToken, newRefreshToken}=await generateAccessAndRefressToken(user._id)
+  
+  
+  return res.status(200).cookie("accessToken",accessToken,option).cookie("refreshToken",newRefreshToken,option).json(new apiResponse(200,{accessToken, refreshToken, newRefreshToken},"al done refreshed"))
+  } catch (error) {
+    throw new apiErrors(401, error?.message||"invalid refresh token")
+  }
+
 })
 
-export { registerUser, loginUser, logOut };
+export { registerUser, loginUser, logOut, refreshAccessToken };
