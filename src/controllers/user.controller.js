@@ -44,7 +44,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const avatarLocalPath = req.files?.avatar[0]?.path;
 
-  console.log("is avatar localpath is there",avatarLocalPath);
+  // console.log("is avatar localpath is there",avatarLocalPath);
+
 // const coverImageLocalPath = req.files?.coverImage[0]?.path;
 // classic js code to solve the TypeError: Cannot read properties of undefined
  
@@ -59,7 +60,8 @@ if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.len
   }
 
   const avatar = await UploadToCloudinary(avatarLocalPath);
-  console.log("after avatar localpath got check",avatar)
+
+  // console.log("after upload to cloudinary",avatar);
 
   
   const coverImage = await UploadToCloudinary(coverImageLocalPath);
@@ -92,8 +94,10 @@ if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.len
 
 //login controller
 const loginUser= asyncHandler( async(req, res)=>{
-  console.log(req.body);
-  const {email, userName, password}= await req.body;
+
+  console.log("request body:",req.body);
+
+  let {email, userName, password}=await req.body ;
    
   if (!(userName || email)) {
     throw new apiErrors(400, "username or email is required")
