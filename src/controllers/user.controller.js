@@ -14,7 +14,7 @@ const generateAccessAndRefressToken= async(userId)=>{
 
     user.refressToken=refressToken;
     await user.save({ validateBeforeSave: false });
-
+    return {accessToken, refressToken}
 
   } catch (error) {
     throw new apiErrors(500, "something went rong in creating the access and refress token")
@@ -97,7 +97,7 @@ const loginUser= asyncHandler( async(req, res)=>{
 
   console.log("request body:",req.body);
 
-  let {email, userName, password}=await req.body ;
+  let {email, userName, password}= req.body ;
    
   if (!(userName || email)) {
     throw new apiErrors(400, "username or email is required")
@@ -111,7 +111,9 @@ const loginUser= asyncHandler( async(req, res)=>{
   if (!user) {
     throw new apiErrors(404,"There is no user with this username or email")
   }
-  
+  // console.log("Retrieved user:", user);
+  // console.log("Is user instance of User:", user instanceof User);
+
   // we had created a method for this
  const isPasswordValid= await user.isPasswordCorrect(password);
 
@@ -120,6 +122,8 @@ const loginUser= asyncHandler( async(req, res)=>{
   }
   
   const {accessToken, refressToken}= await generateAccessAndRefressToken(user._id);
+  console.log(accessToken);
+  console.log(refressToken)
 
   const loggedinUser= await User.findById(user._id).select("-password -refressToken");
 

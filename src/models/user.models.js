@@ -48,12 +48,12 @@ const userSchema = new mongoose.Schema(
 
 
 
-userSchema.method.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-userSchema.method.generateAccessToken = function () {
-  JWT.sign(
+userSchema.methods.generateAccessToken = function () {
+  return JWT.sign(
     {
       _id: this._id,
       userName: this.userName,
@@ -65,8 +65,8 @@ userSchema.method.generateAccessToken = function () {
   );
 };
 
-userSchema.method.generateRefreshToken = function () {
-    JWT.sign(
+userSchema.methods.generateRefreshToken = function () {
+    return JWT.sign(
       {
         _id: this._id,
       },
@@ -80,5 +80,5 @@ userSchema.method.generateRefreshToken = function () {
     this.password = await bcrypt.hash(this.password, 10);
     next;
   });
-  
+
 export const User = mongoose.model("User", userSchema);
