@@ -332,6 +332,72 @@ const UpdateCoverImage = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, user, "cover image uploaded successfully"));
 });
 
+
+const getUserChannelProfile= asyncHandler(async (req, res)=>{
+  const {username}= req.params;
+
+  if (!username?.trim()) {
+    throw new apiErrors(400,"no username found");
+  }
+
+  const channel= await User.aggregate([
+    {
+      $match:{
+        username: username?.trim()
+      }
+    },{
+      $lookup:{
+        from:"subscriptions",
+        localField:"_id",
+        foreignField:"channel",
+        as:"subscribers"
+      }
+    },{
+      $lookup:{
+        from:"subscriptions",
+        localField:"_id",
+        foreignField:"subscriber",
+        as:"subscribedTo"
+      }
+    },{
+      $addFields:{
+        subscribersCount:{
+          $size:"subscribers"
+        },
+        channelSubscribedToCount:{
+          $size:"subscribedTo"
+        },
+        isSubsribed:{
+          $cond:{
+            if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+            then:true,
+            else:false
+          },
+
+        }
+      }
+    },{
+      $project:{
+        fullName:1,
+        username:1,
+        subscribersCount:1,
+        channelSubscribedToCount:1,
+        avatar:1,
+        coverImage:1,
+        email:1
+      }
+    }]);
+
+  
+    if (!channel?.length) {
+      throw new apiErrors(400,"channel does not exist")
+    }
+
+    return res.status(200).json(new apiResponse(200, channel[0],"user channel fetched successfully"))
+
+
+})
+
 export {
   registerUser,
   loginUser,
