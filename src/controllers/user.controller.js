@@ -4,6 +4,7 @@ import { User } from "../models/user.models.js";
 import { UploadToCloudinary } from "../utils/cloudinary.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 // GENERATE ACCESS AND REFRESH TOKEN
 const generateAccessAndRefressToken = async (userId) => {
@@ -332,71 +333,124 @@ const UpdateCoverImage = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, user, "cover image uploaded successfully"));
 });
 
-
-const getUserChannelProfile= asyncHandler(async (req, res)=>{
-  const {username}= req.params;
+//get the profile
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
 
   if (!username?.trim()) {
-    throw new apiErrors(400,"no username found");
+    throw new apiErrors(400, "no username found");
   }
 
-  const channel= await User.aggregate([
+  const channel = await User.aggregate([
     {
-      $match:{
-        username: username?.trim()
-      }
-    },{
-      $lookup:{
-        from:"subscriptions",
-        localField:"_id",
-        foreignField:"channel",
-        as:"subscribers"
-      }
-    },{
-      $lookup:{
-        from:"subscriptions",
-        localField:"_id",
-        foreignField:"subscriber",
-        as:"subscribedTo"
-      }
-    },{
-      $addFields:{
-        subscribersCount:{
-          $size:"subscribers"
+      $match: {
+        username: username?.trim(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "subscribers",
         },
-        channelSubscribedToCount:{
-          $size:"subscribedTo"
+        channelSubscribedToCount: {
+          $size: "subscribedTo",
         },
-        isSubsribed:{
-          $cond:{
-            if:{$in:[req.user?._id,"$subscribers.subscriber"]},
-            then:true,
-            else:false
+        isSubsribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
           },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        userName: 1,
+        subscribersCount: 1,
+        channelSubscribedToCount: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+      },
+    },
+  ]);
 
-        }
-      }
-    },{
-      $project:{
-        fullName:1,
-        username:1,
-        subscribersCount:1,
-        channelSubscribedToCount:1,
-        avatar:1,
-        coverImage:1,
-        email:1
-      }
-    }]);
+  if (!channel?.length) {
+    throw new apiErrors(400, "channel does not exist");
+  }
 
-  
-    if (!channel?.length) {
-      throw new apiErrors(400,"channel does not exist")
-    }
-
-    return res.status(200).json(new apiResponse(200, channel[0],"user channel fetched successfully"))
+  return res
+    .status(200)
+    .json(
+      new apiResponse(200, channel[0], "user channel fetched successfully")
+    );
+});
 
 
-})
+// get the watch history of the user
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignfield: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    fullName: 1,
+                    userName: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res.status(200), user[0].watchHistory, "watch history fetched success";
+});
 
 export {
   registerUser,
@@ -408,4 +462,6 @@ export {
   updateAccountDetail,
   UpdateUserAvatar,
   UpdateCoverImage,
+  getUserChannelProfile,
+  getWatchHistory
 };
