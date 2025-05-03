@@ -265,7 +265,7 @@ const updateAccountDetail = asyncHandler(async (req, res) => {
     throw new apiErrors(400, "fullname or email required");
   }
 
-  User.findByIdAndUpdate(
+  await User.findByIdAndUpdate(
     req.user?._id,
 
     {
@@ -333,7 +333,7 @@ const UpdateCoverImage = asyncHandler(async (req, res) => {
     .json(new apiResponse(200, user, "cover image uploaded successfully"));
 });
 
-//get the profile
+//get the profile 
 const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params;
 
